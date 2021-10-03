@@ -35,6 +35,21 @@ export default class Item extends React.Component {
             this.handleToggleEdit();
         }
     }
+
+    handleDragStart = (event) =>{
+        event.dataTransfer.setData("src", this.props.id);
+    }
+
+    handleDragover = (event) =>{
+        event.preventDefault();
+    }
+    
+    handleDrop = (event) =>{
+        event.preventDefault();
+        this.props.moveItemCallback(event.dataTransfer.getData("src"),event.target.id);
+    }
+
+
     handleUpdate = (event) => {
         this.setState({ item: event.target.value });
     }
@@ -56,7 +71,9 @@ export default class Item extends React.Component {
         }
         else{
             return (
-                <div id={id} className="top5-item" onClick={this.handleClick}>{name}</div>
+                <div id={id} className="top5-item" onClick={this.handleClick} 
+                draggable="true" onDragStart={this.handleDragStart} 
+                onDragOver={this.handleDragover} onDrop={this.handleDrop}>{name}</div>
             )
         }
     }

@@ -154,6 +154,30 @@ class App extends React.Component {
         this.db.mutationUpdateList(this.state.currentList);
     }
 
+    moveItem = (src,dest) =>{
+        let i = parseInt(src);
+        let stepRule = 1;
+        let condition = parseInt(dest - src);
+        if(i > dest){
+            stepRule = -1;
+            condition *= -1;
+        }
+        let newList = {
+            key: this.state.currentList.key,
+            name: this.state.currentList.name,
+            items: this.state.currentList.items
+        };
+        while(condition !== 0){
+            let swap = newList.items[i];
+            newList.items[i] = newList.items[i+stepRule];
+            newList.items[i+stepRule] = swap;
+            i += stepRule;
+            condition--;
+        }
+        this.setState({currentList : newList});
+        this.db.mutationUpdateList(this.state.currentList);
+    }
+
     render() {
         return (
             <div id="app-root">
@@ -171,7 +195,8 @@ class App extends React.Component {
                 />
                 <Workspace
                     currentList={this.state.currentList}
-                    renameItemCallback={this.renameItem}    
+                    renameItemCallback={this.renameItem}
+                    moveItemCallback={this.moveItem}    
                 />
                 <Statusbar 
                     currentList={this.state.currentList} />
