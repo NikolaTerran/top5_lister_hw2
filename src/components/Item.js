@@ -6,6 +6,7 @@ export default class Item extends React.Component {
 
         this.state = {
             item: "",                                                     //more like a buffer
+            className: "top5-item",
             editActive: false,
         }
     }
@@ -42,13 +43,19 @@ export default class Item extends React.Component {
 
     handleDragover = (event) =>{
         event.preventDefault();
+        this.setState({className:"top5-item-dragged-to"}) 
     }
     
-    handleDrop = (event) =>{
-        event.preventDefault();
-        this.props.moveItemCallback(event.dataTransfer.getData("src"),event.target.id);
+    handleDragOut = (event) =>{
+        event.preventDefault()
+        this.setState({className:"top5-item"})
     }
 
+    handleDrop = (event) =>{
+        event.preventDefault();
+        this.setState({className:"top5-item"})
+        this.props.moveItemCallback(event.dataTransfer.getData("src"),event.target.id);
+    }
 
     handleUpdate = (event) => {
         this.setState({ item: event.target.value });
@@ -71,9 +78,9 @@ export default class Item extends React.Component {
         }
         else{
             return (
-                <div id={id} className="top5-item" onClick={this.handleClick} 
+                <div id={id} className={this.state.className} onClick={this.handleClick} 
                 draggable="true" onDragStart={this.handleDragStart} 
-                onDragOver={this.handleDragover} onDrop={this.handleDrop}>{name}</div>
+                onDragOver={this.handleDragover} onDrop={this.handleDrop} onDragLeave={this.handleDragOut}>{name}</div>
             )
         }
     }
