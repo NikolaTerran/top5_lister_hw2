@@ -7,6 +7,10 @@ export default class EditToolbar extends React.Component {
     handleUndo = (event) =>{
         this.props.undoCallback()
     }
+    handleRedo = (event) =>{
+        this.props.redoCallback()
+    }
+
     render() {
         return (
             <div id="edit-toolbar">
@@ -18,8 +22,8 @@ export default class EditToolbar extends React.Component {
                 </div>
                 <div
                     id='redo-button'
-                    className="top5-button">
-
+                    className="top5-button"
+                    onClick={this.handleRedo}>
                         &#x21B7;
                 </div>
                 <div

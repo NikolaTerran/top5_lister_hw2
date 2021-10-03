@@ -173,27 +173,30 @@ class App extends React.Component {
         modal.classList.remove("is-visible");
     }
 
-    renameItem = (id,item) => {
+    renameItem = (id,item,flag) => {
         let newList = {
             key: this.state.currentList.key,
             name: this.state.currentList.name,
             items: this.state.currentList.items
         };
-
-
-        let newUndo = this.state.undoStuff
-        newUndo.length = this.state.undoIndex
-        newUndo[this.state.undoIndex] = {action : "rename", id : id, name : newList.items[id]}
-        newList.items[id] = item;
- 
-        this.setState({currentList : newList,undoStuff : newUndo,undoIndex : this.state.undoIndex+1},()=>{
-         //   console.log(this.state.undoStuff)
-        });
-
+        if(flag === "undo" || flag === "redo"){
+            newList.items[id] = item;
+            this.setState({currentList : newList})
+        }else{
+            let i = this.state.undoIndex
+            let newUndo = this.state.undoStuff
+            while(newUndo[i]){
+                delete newUndo[i];
+                i++
+            }
+            newUndo[this.state.undoIndex] = {action : "rename", id : id, name : newList.items[id], newName : item}
+            newList.items[id] = item;
+            this.setState({currentList : newList,undoStuff : newUndo,undoIndex : this.state.undoIndex+1})
+        }
         this.db.mutationUpdateList(this.state.currentList);
     }
 
-    moveItem = (src,dest) =>{
+    moveItem = (src,dest,flag) =>{
         let i = parseInt(src);
         let stepRule = 1;
         let condition = parseInt(dest - src);
@@ -213,6 +216,20 @@ class App extends React.Component {
             i += stepRule;
             condition--;
         }
+
+        if(flag === "undo" || flag === "redo"){
+            this.setState({currentList : newList})
+        }else{
+            let i = this.state.undoIndex
+            let newUndo = this.state.undoStuff
+            while(newUndo[i]){
+                delete newUndo[i];
+                i++
+            }
+            newUndo[this.state.undoIndex] = {action : "move", src : dest, dest : src}
+            this.setState({currentList : newList,undoStuff : newUndo,undoIndex : this.state.undoIndex+1})
+        }
+
         this.setState({currentList : newList});
         this.db.mutationUpdateList(this.state.currentList);
     }
@@ -221,22 +238,53 @@ class App extends React.Component {
         if(this.state.undoIndex !== 0){
             let undoIns = this.state.undoStuff[this.state.undoIndex-1]
             if(undoIns.action === "rename"){
-                //console.log(undoIns.)
                 this.setState({undoIndex : this.state.undoIndex-1}, () => {
-                    this.renameItem(undoIns.id,undoIns.name);
-                    //console.log(this.state.undoIndex, 'dealersOverallTotal1');
+                    this.renameItem(undoIns.id,undoIns.name,"undo");
+                });
+            }
+            if(undoIns.action === "move"){
+                this.setState({undoIndex : this.state.undoIndex-1}, () => {
+                    this.moveItem(undoIns.src,undoIns.dest,"undo");
                 });
             }
         }
     }
 
+    redoCurrentList = () =>{
+        if(this.state.undoIndex < Object.keys(this.state.undoStuff).length){
+            let undoIns = this.state.undoStuff[this.state.undoIndex]
+            if(undoIns.action === "rename"){
+                this.setState({undoIndex : this.state.undoIndex+1}, () => {
+                    this.renameItem(undoIns.id,undoIns.newName,"redo");
+                });
+            }
+            if(undoIns.action === "move"){
+                this.setState({undoIndex : this.state.undoIndex+1}, () => {
+                    this.moveItem(undoIns.dest,undoIns.src,"redo");
+                });
+            }
+        }
+    }
+
+    handleKeyPress = (event) => {
+        if (event.keyCode === 90 && event.ctrlKey) this.undoCurrentList();
+        if (event.keyCode === 89 && event.ctrlKey) this.redoCurrentList();
+    }
+    componentDidMount(){
+        document.addEventListener("keydown", this.handleKeyPress, false);
+    }
+    componentWillUnmount(){
+        document.removeEventListener("keydown", this.handleKeyPress, false);
+    }
+
     render() {
         return (
-            <div id="app-root">
+            <div id="app-root" onKeyDown={this.handleKeyPress}>
                 <Banner 
                     title='Top 5 Lister'
                     closeCallback={this.closeCurrentList} 
                     undoCallback={this.undoCurrentList}
+                    redoCallback={this.redoCurrentList}
                 />
                 <Sidebar
                     heading='Your Lists'
