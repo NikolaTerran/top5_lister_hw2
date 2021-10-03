@@ -24,7 +24,8 @@ class App extends React.Component {
         // SETUP THE INITIAL STATE
         this.state = {
             currentList : null,
-            sessionData : loadedSessionData
+            sessionData : loadedSessionData,
+            gonnaDeleteThis : null
         }
     }
     sortKeyNamePairsByName = (keyNamePairs) => {
@@ -124,18 +125,43 @@ class App extends React.Component {
             // ANY AFTER EFFECTS?
         });
     }
-    deleteList = () => {
+    deleteList = (keyNamePairs) => {
         // SOMEHOW YOU ARE GOING TO HAVE TO FIGURE OUT
         // WHICH LIST IT IS THAT THE USER WANTS TO
         // DELETE AND MAKE THAT CONNECTION SO THAT THE
         // NAME PROPERLY DISPLAYS INSIDE THE MODAL
-        this.showDeleteListModal();
+        this.showDeleteListModal(keyNamePairs);
     }
     // THIS FUNCTION SHOWS THE MODAL FOR PROMPTING THE USER
     // TO SEE IF THEY REALLY WANT TO DELETE THE LIST
-    showDeleteListModal() {
+    showDeleteListModal(keyNamePairs) {
+        this.setState({gonnaDeleteThis:keyNamePairs})
         let modal = document.getElementById("delete-modal");
         modal.classList.add("is-visible");
+    }
+
+    actualDeleteList = (listKeyPair) => {
+
+        let newKeyNamePairs = this.state.sessionData.keyNamePairs.filter((pair) => (
+            pair.key !== listKeyPair.key
+        ))
+
+        let shownList = null
+        if(listKeyPair.key !== this.state.currentList.key){
+            shownList = this.state.currentList
+        }
+        this.setState(prevState => ({
+            currentList: shownList,
+            sessionData: {
+                nextKey: prevState.sessionData.nextKey,
+                counter: prevState.sessionData.counter,
+                keyNamePairs: newKeyNamePairs
+            }
+        }), () => {
+            this.db.mutationUpdateSessionData(this.state.sessionData);
+        });
+
+        this.hideDeleteListModal()
     }
     // THIS FUNCTION IS FOR HIDING THE MODAL
     hideDeleteListModal() {
@@ -201,7 +227,9 @@ class App extends React.Component {
                 <Statusbar 
                     currentList={this.state.currentList} />
                 <DeleteModal
+                    listKeyPair={this.state.gonnaDeleteThis}
                     hideDeleteListModalCallback={this.hideDeleteListModal}
+                    actualDeleteListCallback={this.actualDeleteList}
                 />
             </div>
         );
