@@ -1,9 +1,11 @@
 import React from "react";
+import Item from "./Item";
 
 export default class Workspace extends React.Component {
     render() {
-        const {currentList} = this.props;
+        const {currentList,renameItemCallback} = this.props;
         const isNull = (currentList === null)
+        let counter = 0;
         return (
             <div id="top5-workspace">
                 <div id="workspace-edit">
@@ -15,20 +17,23 @@ export default class Workspace extends React.Component {
                         <div className="item-number">5.</div>
                     </div>
                     {isNull ?
-                        <div id="edit-items">
-                        <div id="item-1" className="top5-item"></div>
-                        <div id="item-1" className="top5-item"></div>
-                        <div id="item-1" className="top5-item"></div>
-                        <div id="item-1" className="top5-item"></div>
-                        <div id="item-1" className="top5-item"></div>
+                        <div id="edit-items">                    
+                            <div id="item-1" className="top5-item"></div>
+                            <div id="item-2" className="top5-item"></div>
+                            <div id="item-3" className="top5-item"></div>
+                            <div id="item-4" className="top5-item"></div>
+                            <div id="item-5" className="top5-item"></div>
                         </div>
                         :
                         <div id="edit-items">
-                            <div id="item-1" className="top5-item">{currentList.items[0]}</div>
-                            <div id="item-1" className="top5-item">{currentList.items[1]}</div>
-                            <div id="item-1" className="top5-item">{currentList.items[2]}</div>
-                            <div id="item-1" className="top5-item">{currentList.items[3]}</div>
-                            <div id="item-1" className="top5-item">{currentList.items[4]}</div>
+                            {currentList.items.map((item) => (
+                                <Item
+                                    key = {counter}
+                                    id = {counter++}
+                                    name = {item}
+                                    renameItemCallback={renameItemCallback}
+                                />
+                            ))}
                         </div>
                     }
                 </div>

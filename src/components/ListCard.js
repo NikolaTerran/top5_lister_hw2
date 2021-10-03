@@ -42,11 +42,16 @@ export default class ListCard extends React.Component {
         }
     }
     handleBlur = () => {
-        let key = this.props.keyNamePair.key;
         let textValue = this.state.text;
-        console.log("ListCard handleBlur: " + textValue);
-        this.props.renameListCallback(key, textValue);
-        this.handleToggleEdit();
+        if(textValue === ""){
+            this.setState({text: this.props.keyNamePair.name});
+            this.handleToggleEdit();
+        }else{
+            let key = this.props.keyNamePair.key;
+            console.log("ListCard handleBlur: " + textValue);
+            this.props.renameListCallback(key, textValue);
+            this.handleToggleEdit();
+        }
     }
 
     render() {
@@ -65,7 +70,6 @@ export default class ListCard extends React.Component {
                 />)
         }
         else {
-
             let selectClass = "unselected-list-card";
             if (selected) {
                 selectClass = "selected-list-card";
