@@ -21,13 +21,13 @@ class App extends React.Component {
         // GET THE SESSION DATA FROM OUR DATA MANAGER
         let loadedSessionData = this.db.queryGetSessionData();
 
-        //console.log(loadedSessionData)
-
         // SETUP THE INITIAL STATE
         this.state = {
             currentList : null,
             sessionData : loadedSessionData,
-            gonnaDeleteThis : null
+            gonnaDeleteThis : null,
+            undoStuff: {},
+            undoIndex: 0,
         }
     }
     sortKeyNamePairsByName = (keyNamePairs) => {
@@ -115,7 +115,6 @@ class App extends React.Component {
             currentList: newCurrentList,
             sessionData: prevState.sessionData
         }), () => {
-            console.log(this.state.currentList)
             // ANY AFTER EFFECTS?
         });
     }
@@ -150,8 +149,6 @@ class App extends React.Component {
             pair.key !== listKeyPair.key
         ))
 
-        //console.log(newKeyNamePairs)
-
         let shownList = null
         if(this.state.currentList !== null && listKeyPair.key !== this.state.currentList.key){
             shownList = this.state.currentList
@@ -182,8 +179,17 @@ class App extends React.Component {
             name: this.state.currentList.name,
             items: this.state.currentList.items
         };
+
+
+        let newUndo = this.state.undoStuff
+        newUndo.length = this.state.undoIndex
+        newUndo[this.state.undoIndex] = {action : "rename", id : id, name : newList.items[id]}
         newList.items[id] = item;
-        this.setState({currentList : newList});
+ 
+        this.setState({currentList : newList,undoStuff : newUndo,undoIndex : this.state.undoIndex+1},()=>{
+         //   console.log(this.state.undoStuff)
+        });
+
         this.db.mutationUpdateList(this.state.currentList);
     }
 
@@ -212,20 +218,16 @@ class App extends React.Component {
     }
 
     undoCurrentList = () =>{
-        
-        this.setState(prevState => ({
-            currentList: prevState.currentList,
-            sessionData: {
-                nextKey: prevState.sessionData.nextKey,
-                counter: prevState.sessionData.counter,
-                keyNamePairs: prevState.sessionData.keyNamePairs
+        if(this.state.undoIndex !== 0){
+            let undoIns = this.state.undoStuff[this.state.undoIndex-1]
+            if(undoIns.action === "rename"){
+                //console.log(undoIns.)
+                this.setState({undoIndex : this.state.undoIndex-1}, () => {
+                    this.renameItem(undoIns.id,undoIns.name);
+                    //console.log(this.state.undoIndex, 'dealersOverallTotal1');
+                });
             }
-        }), () => {
-            // UPDATE LIST
-            // IS AN AFTER EFFECT
-            this.db.mutationUpdateList(this.state.currentList);
-        });
-        console.log(this.state.currentList)
+        }
     }
 
     render() {

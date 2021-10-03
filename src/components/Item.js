@@ -5,10 +5,13 @@ export default class Item extends React.Component {
         super(props);
 
         this.state = {
-            item: "",                                                     //more like a buffer
+            item: "",                                                     
             className: "top5-item",
             editActive: false,
         }
+    }
+    handleBuffer = (name) =>{
+        this.setState({item:name})
     }
     handleClick = (event) => {
         if (event.detail === 2) {
@@ -27,10 +30,10 @@ export default class Item extends React.Component {
     }
     handleBlur = (event) => {
         if(this.state.item === ""){
-            this.setState({item: this.props.item});
+            console.log("Item handleBlur: no change");
             this.handleToggleEdit();
         }else{
-            console.log("Item handleChange: " + this.state.item);
+            console.log("Item handleBlur: " + this.state.item);
             this.props.renameItemCallback(this.props.id,this.state.item);
             this.setState({item: ""});
             this.handleToggleEdit();
