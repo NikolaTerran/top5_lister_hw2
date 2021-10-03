@@ -56,8 +56,10 @@ export default class Item extends React.Component {
 
     handleDrop = (event) =>{
         event.preventDefault();
-        this.setState({className:"top5-item"})
-        this.props.moveItemCallback(event.dataTransfer.getData("src"),event.target.id);
+        if(event.dataTransfer.getData("src") !== event.target.id){
+            this.setState({className:"top5-item"})
+            this.props.moveItemCallback(event.dataTransfer.getData("src"),event.target.id);
+        }
     }
 
     handleUpdate = (event) => {
@@ -75,6 +77,7 @@ export default class Item extends React.Component {
                     onBlur={this.handleBlur}
                     onChange={this.handleUpdate}
                     defaultValue={name}
+                    autoFocus
                 />
                 </div>
             )

@@ -28,8 +28,17 @@ class App extends React.Component {
             gonnaDeleteThis : null,
             undoStuff: {},
             undoIndex: 0,
+            undoButton: "top5-button-disabled",
+            redoButton: "top5-button-disabled",
+            closeButton: "top5-button-disabled",
+            addButton: "top5-button"
         }
     }
+
+    clearTransaction = () =>{
+        this.setState({undoStuff: {}, undoIndex: 0, undoButton: "top5-button-disabled",redoButton: "top5-button-disabled"})
+    }
+
     sortKeyNamePairsByName = (keyNamePairs) => {
         keyNamePairs.sort((keyPair1, keyPair2) => {
             // GET THE LISTS
@@ -39,6 +48,8 @@ class App extends React.Component {
     // THIS FUNCTION BEGINS THE PROCESS OF CREATING A NEW LIST
     createNewList = () => {
         // FIRST FIGURE OUT WHAT THE NEW LIST'S KEY AND NAME WILL BE
+        if(this.state.addButton !== "top5-button-disabled"){
+            
         let newKey = this.state.sessionData.nextKey;
         let newName = "Untitled" + newKey;
 
@@ -73,7 +84,9 @@ class App extends React.Component {
             // IS AN AFTER EFFECT
             this.db.mutationCreateList(newList);
             this.db.mutationUpdateSessionData(this.state.sessionData);
+            this.loadList(newKey)
         });
+        }
     }
     renameList = (key, newName) => {
         let newKeyNamePairs = [...this.state.sessionData.keyNamePairs];
@@ -102,6 +115,7 @@ class App extends React.Component {
         }), () => {
             // AN AFTER EFFECT IS THAT WE NEED TO MAKE SURE
             // THE TRANSACTION STACK IS CLEARED
+            this.clearTransaction()
             let list = this.db.queryGetList(key);
             list.name = newName;
             this.db.mutationUpdateList(list);
@@ -116,6 +130,8 @@ class App extends React.Component {
             sessionData: prevState.sessionData
         }), () => {
             // ANY AFTER EFFECTS?
+            this.clearTransaction()
+            this.setState({closeButton:"top5-button",addButton:"top5-button-disabled"})
         });
     }
     // THIS FUNCTION BEGINS THE PROCESS OF CLOSING THE CURRENT LIST
@@ -126,6 +142,8 @@ class App extends React.Component {
             sessionData: this.state.sessionData
         }), () => {
             // ANY AFTER EFFECTS?
+            this.clearTransaction()
+            this.setState({closeButton:"top5-button-disabled",addButton:"top5-button"})
         });
     }
     deleteList = (keyNamePairs) => {
@@ -161,6 +179,10 @@ class App extends React.Component {
                 keyNamePairs: newKeyNamePairs
             }
         }), () => {
+            if(shownList === null){
+                this.clearTransaction()
+                this.setState({closeButton:"top5-button-disabled",addButton:"top5-button"})
+            }
             this.db.mutationDeleteList(newKeyNamePairs,listKeyPair.key)
             this.db.mutationUpdateSessionData(this.state.sessionData);
         });
@@ -179,9 +201,12 @@ class App extends React.Component {
             name: this.state.currentList.name,
             items: this.state.currentList.items
         };
-        if(flag === "undo" || flag === "redo"){
+        if(flag === "undo"){
             newList.items[id] = item;
-            this.setState({currentList : newList})
+            this.setState({currentList : newList, redoButton : "top5-button"})
+        }else if(flag === "redo"){
+            newList.items[id] = item;
+            this.setState({currentList : newList, undoButton : "top5-button"})
         }else{
             let i = this.state.undoIndex
             let newUndo = this.state.undoStuff
@@ -191,7 +216,7 @@ class App extends React.Component {
             }
             newUndo[this.state.undoIndex] = {action : "rename", id : id, name : newList.items[id], newName : item}
             newList.items[id] = item;
-            this.setState({currentList : newList,undoStuff : newUndo,undoIndex : this.state.undoIndex+1})
+            this.setState({currentList : newList,undoStuff : newUndo,undoIndex : this.state.undoIndex+1, undoButton : "top5-button", redoButton : "top5-button-disabled"})
         }
         this.db.mutationUpdateList(this.state.currentList);
     }
@@ -217,8 +242,10 @@ class App extends React.Component {
             condition--;
         }
 
-        if(flag === "undo" || flag === "redo"){
-            this.setState({currentList : newList})
+        if(flag === "undo"){
+            this.setState({currentList : newList, redoButton : "top5-button"})
+        }else if(flag === "redo"){
+            this.setState({currentList : newList, undoButton : "top5-button"})
         }else{
             let i = this.state.undoIndex
             let newUndo = this.state.undoStuff
@@ -227,7 +254,7 @@ class App extends React.Component {
                 i++
             }
             newUndo[this.state.undoIndex] = {action : "move", src : dest, dest : src}
-            this.setState({currentList : newList,undoStuff : newUndo,undoIndex : this.state.undoIndex+1})
+            this.setState({currentList : newList,undoStuff : newUndo,undoIndex : this.state.undoIndex+1, undoButton : "top5-button", redoButton : "top5-button-disabled"})
         }
 
         this.setState({currentList : newList});
@@ -237,13 +264,17 @@ class App extends React.Component {
     undoCurrentList = () =>{
         if(this.state.undoIndex !== 0){
             let undoIns = this.state.undoStuff[this.state.undoIndex-1]
+            let updateUndoButton = "top5-button"
+            if(this.state.undoIndex===1){
+                updateUndoButton = "top5-button-disabled"
+            }
             if(undoIns.action === "rename"){
-                this.setState({undoIndex : this.state.undoIndex-1}, () => {
+                this.setState({undoIndex : this.state.undoIndex-1, undoButton : updateUndoButton}, () => {
                     this.renameItem(undoIns.id,undoIns.name,"undo");
                 });
             }
             if(undoIns.action === "move"){
-                this.setState({undoIndex : this.state.undoIndex-1}, () => {
+                this.setState({undoIndex : this.state.undoIndex-1, undoButton : updateUndoButton}, () => {
                     this.moveItem(undoIns.src,undoIns.dest,"undo");
                 });
             }
@@ -253,13 +284,17 @@ class App extends React.Component {
     redoCurrentList = () =>{
         if(this.state.undoIndex < Object.keys(this.state.undoStuff).length){
             let undoIns = this.state.undoStuff[this.state.undoIndex]
+            let updateRedoButton = "top5-button"
+            if(this.state.undoIndex===(Object.keys(this.state.undoStuff).length - 1)){
+                updateRedoButton = "top5-button-disabled"
+            }
             if(undoIns.action === "rename"){
-                this.setState({undoIndex : this.state.undoIndex+1}, () => {
+                this.setState({undoIndex : this.state.undoIndex+1, redoButton : updateRedoButton}, () => {
                     this.renameItem(undoIns.id,undoIns.newName,"redo");
                 });
             }
             if(undoIns.action === "move"){
-                this.setState({undoIndex : this.state.undoIndex+1}, () => {
+                this.setState({undoIndex : this.state.undoIndex+1, redoButton : updateRedoButton}, () => {
                     this.moveItem(undoIns.dest,undoIns.src,"redo");
                 });
             }
@@ -282,12 +317,16 @@ class App extends React.Component {
             <div id="app-root" onKeyDown={this.handleKeyPress}>
                 <Banner 
                     title='Top 5 Lister'
+                    undoButton={this.state.undoButton}
+                    redoButton={this.state.redoButton}
+                    closeButton={this.state.closeButton}
                     closeCallback={this.closeCurrentList} 
                     undoCallback={this.undoCurrentList}
                     redoCallback={this.redoCurrentList}
                 />
                 <Sidebar
                     heading='Your Lists'
+                    addButton={this.state.addButton}
                     currentList={this.state.currentList}
                     keyNamePairs={this.state.sessionData.keyNamePairs}
                     createNewListCallback={this.createNewList}
