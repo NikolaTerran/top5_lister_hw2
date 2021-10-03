@@ -21,6 +21,8 @@ class App extends React.Component {
         // GET THE SESSION DATA FROM OUR DATA MANAGER
         let loadedSessionData = this.db.queryGetSessionData();
 
+        //console.log(loadedSessionData)
+
         // SETUP THE INITIAL STATE
         this.state = {
             currentList : null,
@@ -70,6 +72,7 @@ class App extends React.Component {
             // PUTTING THIS NEW LIST IN PERMANENT STORAGE
             // IS AN AFTER EFFECT
             this.db.mutationCreateList(newList);
+            this.db.mutationUpdateSessionData(this.state.sessionData);
         });
     }
     renameList = (key, newName) => {
@@ -112,6 +115,7 @@ class App extends React.Component {
             currentList: newCurrentList,
             sessionData: prevState.sessionData
         }), () => {
+            console.log(this.state.currentList)
             // ANY AFTER EFFECTS?
         });
     }
@@ -146,8 +150,10 @@ class App extends React.Component {
             pair.key !== listKeyPair.key
         ))
 
+        //console.log(newKeyNamePairs)
+
         let shownList = null
-        if(listKeyPair.key !== this.state.currentList.key){
+        if(this.state.currentList !== null && listKeyPair.key !== this.state.currentList.key){
             shownList = this.state.currentList
         }
         this.setState(prevState => ({
@@ -158,6 +164,7 @@ class App extends React.Component {
                 keyNamePairs: newKeyNamePairs
             }
         }), () => {
+            this.db.mutationDeleteList(newKeyNamePairs,listKeyPair.key)
             this.db.mutationUpdateSessionData(this.state.sessionData);
         });
 
@@ -204,12 +211,31 @@ class App extends React.Component {
         this.db.mutationUpdateList(this.state.currentList);
     }
 
+    undoCurrentList = () =>{
+        
+        this.setState(prevState => ({
+            currentList: prevState.currentList,
+            sessionData: {
+                nextKey: prevState.sessionData.nextKey,
+                counter: prevState.sessionData.counter,
+                keyNamePairs: prevState.sessionData.keyNamePairs
+            }
+        }), () => {
+            // UPDATE LIST
+            // IS AN AFTER EFFECT
+            this.db.mutationUpdateList(this.state.currentList);
+        });
+        console.log(this.state.currentList)
+    }
+
     render() {
         return (
             <div id="app-root">
                 <Banner 
                     title='Top 5 Lister'
-                    closeCallback={this.closeCurrentList} />
+                    closeCallback={this.closeCurrentList} 
+                    undoCallback={this.undoCurrentList}
+                />
                 <Sidebar
                     heading='Your Lists'
                     currentList={this.state.currentList}

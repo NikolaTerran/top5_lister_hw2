@@ -6,6 +6,7 @@ export default class Workspace extends React.Component {
         const {currentList,renameItemCallback,moveItemCallback} = this.props;
         const isNull = (currentList === null)
         let counter = 0;
+        console.log(currentList)
         return (
             <div id="top5-workspace">
                 <div id="workspace-edit">
