@@ -26,12 +26,13 @@ export default class ListCard extends React.Component {
     }
     handleDeleteList = (event) => {
         event.stopPropagation();
+        event.target.blur()
         this.props.deleteListCallback(this.props.keyNamePair);
     }
     handleToggleEdit = (event) => {
         this.setState({
             editActive: !this.state.editActive
-        });
+        },()=>{this.props.editCallback(this.state.editActive);});
     }
     handleUpdate = (event) => {
         this.setState({ text: event.target.value });
@@ -82,6 +83,7 @@ export default class ListCard extends React.Component {
                     onClick={this.handleClick}
                     className={'list-card ' + selectClass}>
                     <span
+                        
                         id={"list-card-text-" + keyNamePair.key}
                         key={keyNamePair.key}
                         className="list-card-text">

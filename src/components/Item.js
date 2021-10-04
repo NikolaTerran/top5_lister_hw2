@@ -21,6 +21,8 @@ export default class Item extends React.Component {
     handleToggleEdit = (event) => {
         this.setState({
             editActive: !this.state.editActive
+        },()=>{
+            this.props.editCallback(this.state.editActive)
         });
     }
     handleKeyPress = (event) => {
@@ -57,9 +59,9 @@ export default class Item extends React.Component {
     handleDrop = (event) =>{
         event.preventDefault();
         if(event.dataTransfer.getData("src") !== event.target.id){
-            this.setState({className:"top5-item"})
             this.props.moveItemCallback(event.dataTransfer.getData("src"),event.target.id);
         }
+        this.setState({className:"top5-item"})
     }
 
     handleUpdate = (event) => {

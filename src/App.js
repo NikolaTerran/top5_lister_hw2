@@ -31,7 +31,7 @@ class App extends React.Component {
             undoButton: "top5-button-disabled",
             redoButton: "top5-button-disabled",
             closeButton: "top5-button-disabled",
-            addButton: "top5-button"
+            addButton: "top5-button",
         }
     }
 
@@ -62,6 +62,7 @@ class App extends React.Component {
 
         // MAKE THE KEY,NAME OBJECT SO WE CAN KEEP IT IN OUR
         // SESSION DATA SO IT WILL BE IN OUR LIST OF LISTS
+
         let newKeyNamePair = { "key": newKey, "name": newName };
         let updatedPairs = [...this.state.sessionData.keyNamePairs, newKeyNamePair];
         this.sortKeyNamePairsByName(updatedPairs);
@@ -73,7 +74,7 @@ class App extends React.Component {
         // SO ANY AFTER EFFECTS THAT NEED TO USE THIS UPDATED STATE
         // SHOULD BE DONE VIA ITS CALLBACK
         this.setState(prevState => ({
-            currentList: newList,
+            currentList: null,
             sessionData: {
                 nextKey: prevState.sessionData.nextKey + 1,
                 counter: prevState.sessionData.counter + 1,
@@ -115,7 +116,6 @@ class App extends React.Component {
         }), () => {
             // AN AFTER EFFECT IS THAT WE NEED TO MAKE SURE
             // THE TRANSACTION STACK IS CLEARED
-            this.clearTransaction()
             let list = this.db.queryGetList(key);
             list.name = newName;
             this.db.mutationUpdateList(list);
@@ -124,15 +124,20 @@ class App extends React.Component {
     }
     // THIS FUNCTION BEGINS THE PROCESS OF LOADING A LIST FOR EDITING
     loadList = (key) => {
-        let newCurrentList = this.db.queryGetList(key);
-        this.setState(prevState => ({
-            currentList: newCurrentList,
-            sessionData: prevState.sessionData
-        }), () => {
-            // ANY AFTER EFFECTS?
-            this.clearTransaction()
-            this.setState({closeButton:"top5-button",addButton:"top5-button-disabled"})
-        });
+        console.log(key)
+        
+        if(this.state.currentList === null || key !== '' + this.state.currentList.key){
+            let newCurrentList = this.db.queryGetList(key);
+
+            this.setState(prevState => ({
+                currentList: newCurrentList,
+                sessionData: prevState.sessionData
+            }), () => {
+                // ANY AFTER EFFECTS?
+                this.clearTransaction()
+                this.setState({closeButton:"top5-button",addButton:"top5-button-disabled"})
+            });
+        }
     }
     // THIS FUNCTION BEGINS THE PROCESS OF CLOSING THE CURRENT LIST
     closeCurrentList = () => {
@@ -155,8 +160,8 @@ class App extends React.Component {
     }
     // THIS FUNCTION SHOWS THE MODAL FOR PROMPTING THE USER
     // TO SEE IF THEY REALLY WANT TO DELETE THE LIST
-    showDeleteListModal(keyNamePairs) {
-        this.setState({gonnaDeleteThis:keyNamePairs})
+    showDeleteListModal= (keyNamePairs) =>{
+        this.setState({gonnaDeleteThis:keyNamePairs,undoButton:"top5-button-disabled",redoButton:"top5-button-disabled"})        
         let modal = document.getElementById("delete-modal");
         modal.classList.add("is-visible");
     }
@@ -190,9 +195,18 @@ class App extends React.Component {
         this.hideDeleteListModal()
     }
     // THIS FUNCTION IS FOR HIDING THE MODAL
-    hideDeleteListModal() {
+    hideDeleteListModal = () => {
         let modal = document.getElementById("delete-modal");
         modal.classList.remove("is-visible");
+        if (document.activeElement) {
+            document.activeElement.blur();
+        }
+        if(this.state.undoIndex < Object.keys(this.state.undoStuff).length){
+            this.setState({redoButton:"top5-button"})
+        }
+        if(this.state.undoIndex !== 0){
+            this.setState({undoButton:"top5-button"})
+        }
     }
 
     renameItem = (id,item,flag) => {
@@ -262,7 +276,7 @@ class App extends React.Component {
     }
 
     undoCurrentList = () =>{
-        if(this.state.undoIndex !== 0){
+        if(this.state.undoButton !== "top5-button-disabled"){
             let undoIns = this.state.undoStuff[this.state.undoIndex-1]
             let updateUndoButton = "top5-button"
             if(this.state.undoIndex===1){
@@ -282,7 +296,7 @@ class App extends React.Component {
     }
 
     redoCurrentList = () =>{
-        if(this.state.undoIndex < Object.keys(this.state.undoStuff).length){
+        if(this.state.redoButton !== "top5-button-disabled"){
             let undoIns = this.state.undoStuff[this.state.undoIndex]
             let updateRedoButton = "top5-button"
             if(this.state.undoIndex===(Object.keys(this.state.undoStuff).length - 1)){
@@ -302,14 +316,29 @@ class App extends React.Component {
     }
 
     handleKeyPress = (event) => {
-        if (event.keyCode === 90 && event.ctrlKey) this.undoCurrentList();
+        if (event.keyCode === 90 && event.ctrlKey){this.undoCurrentList();}
         if (event.keyCode === 89 && event.ctrlKey) this.redoCurrentList();
     }
+
     componentDidMount(){
-        document.addEventListener("keydown", this.handleKeyPress, false);
+        document.addEventListener("keyup", this.handleKeyPress,true);
     }
     componentWillUnmount(){
-        document.removeEventListener("keydown", this.handleKeyPress, false);
+        document.removeEventListener("keyup", this.handleKeyPress,true);
+    }
+
+
+    editing = (editActive) =>{
+        if(editActive){
+            this.setState({undoButton:"top5-button-disabled",redoButton:"top5-button-disabled"})
+        }else{
+            if(this.state.undoIndex < Object.keys(this.state.undoStuff).length){
+                this.setState({redoButton:"top5-button"})
+            }
+            if(this.state.undoIndex !== 0){
+                this.setState({undoButton:"top5-button"})
+            }
+        }
     }
 
     render() {
@@ -333,11 +362,13 @@ class App extends React.Component {
                     deleteListCallback={this.deleteList}
                     loadListCallback={this.loadList}
                     renameListCallback={this.renameList}
+                    editCallback={this.editing}
                 />
                 <Workspace
                     currentList={this.state.currentList}
                     renameItemCallback={this.renameItem}
-                    moveItemCallback={this.moveItem}    
+                    moveItemCallback={this.moveItem}
+                    editCallback={this.editing}    
                 />
                 <Statusbar 
                     currentList={this.state.currentList} />

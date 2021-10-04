@@ -3,7 +3,7 @@ import Item from "./Item";
 
 export default class Workspace extends React.Component {
     render() {
-        const {currentList,renameItemCallback,moveItemCallback} = this.props;
+        const {currentList,renameItemCallback,moveItemCallback,editCallback} = this.props;
         const isNull = (currentList === null)
         let counter = 0;
         return (
@@ -33,6 +33,7 @@ export default class Workspace extends React.Component {
                                     name = {item}
                                     renameItemCallback={renameItemCallback}
                                     moveItemCallback={moveItemCallback}
+                                    editCallback={editCallback}
                                 />
                             ))}
                         </div>
