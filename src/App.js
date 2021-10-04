@@ -124,8 +124,6 @@ class App extends React.Component {
     }
     // THIS FUNCTION BEGINS THE PROCESS OF LOADING A LIST FOR EDITING
     loadList = (key) => {
-        console.log(key)
-        
         if(this.state.currentList === null || key !== '' + this.state.currentList.key){
             let newCurrentList = this.db.queryGetList(key);
 
